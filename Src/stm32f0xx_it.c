@@ -128,7 +128,9 @@ void SysTick_Handler(void)
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   /* USER CODE BEGIN SysTick_IRQn 1 */
-
+  extern void tick_process(void);
+	/*-------------------*/
+	tick_process();
   /* USER CODE END SysTick_IRQn 1 */
 }
 

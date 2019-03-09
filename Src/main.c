@@ -66,6 +66,17 @@ static void MX_USART1_UART_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 static unsigned char buffer[256];
+
+/* tick process */
+void tick_process(void)
+{
+	/* key process */
+	if( __nrf.process != 0 )
+	{
+	   __nrf.process(0,0,0,0,0);
+	}
+	/* end of file */	
+}
 /* USER CODE END 0 */
 
 /**
@@ -124,7 +135,7 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
-  {
+  {	
 		/* read data */
 		if( __nrf.read(0,buffer,sizeof(buffer)) == sizeof(__rc))
 		{
@@ -138,9 +149,6 @@ int main(void)
 				GPIOB->ODR ^= 1 << 1;				
 			}
 		}
-		/* key process */
-		__nrf.process(0,0,0,0,0);
-		/* end of file */
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
