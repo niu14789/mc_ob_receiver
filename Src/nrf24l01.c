@@ -136,6 +136,7 @@ void NRF24L01_Write_Buf( unsigned char RegAddr, unsigned char *pBuf, unsigned ch
     }
 	
     RF24L01_SET_CS_HIGH( );		//È¡ÏûÆ¬Ñ¡
+
 }
 
 /**
@@ -692,9 +693,6 @@ int nrf_read(unsigned int addr,void * data , unsigned int len)
 	/* return */
 	return read_len;
 }
-//RF24L01_Set_Mode( MODE_RX );		//½ÓÊÕÄ£Ê½
-//			/* read data */
-//			j = NRF24L01_RxPacket( (unsigned char *)RxBuffer );		//½ÓÊÕ×Ö½
 /* delay for a while , just for notify */
 static void delay_ms_rf(unsigned int ms)
 {
@@ -703,6 +701,35 @@ static void delay_ms_rf(unsigned int ms)
 	tick = HAL_GetTick();
 	/* wait */
 	while( !((HAL_GetTick() - tick) > ms) );
+}
+/* process */
+void key_process(unsigned int pm1,unsigned int pm2,unsigned int pm3,unsigned int pm4,unsigned int pm5)
+{
+		static unsigned int power_cnt = 0;
+		static unsigned char release_flag = 0;	
+		/* check the key */
+		if( HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_1) == 1 )
+		{
+			 if( release_flag )
+			 {
+					power_cnt ++ ;
+					/* power off */
+					if( power_cnt > 1000 )
+					{
+						HAL_GPIO_WritePin(GPIOF,GPIO_PIN_0,GPIO_PIN_RESET);	
+						HAL_GPIO_WritePin(GPIOB,GPIO_PIN_1,GPIO_PIN_SET);
+						/* infinite loop */
+						while(1);
+					}
+			 }
+		}
+		else
+		{
+			/* clear */
+			power_cnt = 0;
+			/* enable the reciver */
+			release_flag = 1;
+		}
 }
 /* dev init */
 int nrf24L01_Init( dev_HandleTypeDef * dev , void * spi_handle )
@@ -716,6 +743,7 @@ int nrf24L01_Init( dev_HandleTypeDef * dev , void * spi_handle )
 		dev->write = nrf_write;
 		dev->state = delay_ms_rf;
 		dev->read  = nrf_read;
+		dev->process = key_process;
 		/*---------*/
 		if( NRF24L01_check() != 0 )
 		{
