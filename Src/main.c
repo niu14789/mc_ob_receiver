@@ -67,13 +67,23 @@ static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN 0 */
 static unsigned char buffer[256];
 static unsigned int  led_freq = 0;
+static unsigned int  connect_lost = 0;
 /* tick process */
 void tick_process(void)
 {
 	/* key process */
 	if( __nrf.process != 0 )
 	{
-	   __nrf.process(0,0,0,0,0);
+	   __nrf.process((unsigned int)&__flash,0,0,0,0);
+	}
+	/* counter */
+	if( connect_lost ++ > 1000 )
+	{
+		/* If no data is received in a second, 
+		   it is considered disconnected */
+		connect_lost = 0;
+		/* set led on */
+		HAL_GPIO_WritePin(GPIOB,GPIO_PIN_1,GPIO_PIN_RESET);
 	}
 	/* end of file */	
 }
@@ -113,7 +123,7 @@ int main(void)
 	CRC16_Init(&__crc16);
 	Flash_Init(&__flash);
   /* check nrf24l01 */	
-  if( nrf24L01_Init(&__nrf,&hspi1) != 0 )
+  if( nrf24L01_Init(&__nrf,&hspi1,(unsigned int)&__flash) != 0 )
 	{
 		/* can not find the nrf moudle */
 		HAL_GPIO_WritePin(GPIOF,GPIO_PIN_0,GPIO_PIN_SET);
@@ -130,6 +140,7 @@ int main(void)
 	/* lighten the led */
 	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_1,GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOF,GPIO_PIN_0,GPIO_PIN_SET);	
+	/* read */
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -139,6 +150,8 @@ int main(void)
 		/* read data */
 		if( __nrf.read(0,buffer,sizeof(buffer)) == sizeof(__rc))
 		{
+			/* clear the counter */
+			connect_lost = 0;
 			/* copy data */
 			memcpy((void *)&__rc,(const void *)buffer,sizeof(__rc));
 			/* check crc */
@@ -152,6 +165,25 @@ int main(void)
 					/* toggle */
 					GPIOB->ODR ^= 1 << 1;			
 				}					
+				/* check rc flag */
+				if( __nrf.i_pri != __rc.unique_id )
+				{
+					/* write the new unique id into flash */
+					unsigned char buffer[4];
+					/* struct */
+					buffer[0] = __rc.unique_id >> 8;
+					buffer[1] = __rc.unique_id & 0xff;
+					/* flag */
+					buffer[2] = 0xAA;
+					/* check sum */
+					buffer[3] = (unsigned char)(buffer[0] + buffer[1]);
+					/* active */
+					if( __flash.write(FEBASE_ADDR,buffer,sizeof(buffer)) == 0 )
+					{
+						/* ok . config ok . reset the system */
+						HAL_GPIO_WritePin(GPIOF,GPIO_PIN_0,GPIO_PIN_RESET);
+					}
+				}
 			}
 		}
     /* USER CODE END WHILE */

@@ -32,6 +32,11 @@ static int flash_write(unsigned int addr,void * data , unsigned int len)
 	int ret = 0;
 	unsigned short * dat = (unsigned short *)data;
 	unsigned int PageError;
+	/* judging the length */
+	if( (addr + len) >= 16*1024 + 0x08000000 )//overflow
+	{
+		return (-1);
+	}	
 	/* erase frase */
 	FLASH_EraseInitTypeDef EraseInitStruct;
 	/* unclock flash */
@@ -58,7 +63,7 @@ static int flash_write(unsigned int addr,void * data , unsigned int len)
 static int flash_read(unsigned int addr,void * data,unsigned int len)
 {
 	/* judging the length */
-	if( (addr + len) >= 128*1024 + 0x08000000 )//overflow
+	if( (addr + len) >= 16*1024 + 0x08000000 )//overflow
 	{
 		return (-1);
 	}
@@ -79,7 +84,10 @@ static int flash_ioctrl(unsigned int cmd,unsigned int param,void * data , unsign
 	/* get interface */
 	int ret = 0;
 	dev_HandleTypeDef  * dev = (dev_HandleTypeDef *)param;
-	fls_HandleTypeDef  * fls = (fls_HandleTypeDef *)data;;
+	fls_HandleTypeDef  * fls = (fls_HandleTypeDef *)data;
+	/* erase frase */
+	FLASH_EraseInitTypeDef EraseInitStruct;
+	unsigned int PageError;
 	/* parse the cmd */
 	switch(cmd)
 	{
@@ -90,7 +98,7 @@ static int flash_ioctrl(unsigned int cmd,unsigned int param,void * data , unsign
 				return (-1);/* can not */
 			}
 		  /* read flash data into fls */
-			flash_read(EEBASE_ADDR,fls,sizeof(fls_HandleTypeDef));
+			flash_read(FEBASE_ADDR,fls,sizeof(fls_HandleTypeDef));
 			/* calibate crc and check */
 			ret = ( dev->read(0,fls,len - 2 ) == fls->crc_check ) ? 0 : 1 ; //remove the crc16 section
 			/* break */
@@ -104,8 +112,22 @@ static int flash_ioctrl(unsigned int cmd,unsigned int param,void * data , unsign
       /* calibate crc and check */	
 			fls->crc_check = dev->read(0,fls,len - 2 );
 			/* write into */
-			ret = flash_write(EEBASE_ADDR,fls,sizeof(fls_HandleTypeDef));
+			ret = flash_write(FEBASE_ADDR,fls,sizeof(fls_HandleTypeDef));
       /* break */			
+			break;
+		case ERASE_FLASH:
+			/* unclock flash */
+			HAL_FLASH_Unlock();	
+			/* struct */
+			EraseInitStruct.TypeErase = FLASH_TYPEERASE_PAGES;
+			EraseInitStruct.PageAddress = param;
+			EraseInitStruct.NbPages = 1;
+			/* erase */
+			if (HAL_FLASHEx_Erase(&EraseInitStruct, &PageError) != HAL_OK )
+			{
+				/* error */
+				return (1);
+			}			
 			break;
 		default:
 			break;

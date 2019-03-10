@@ -702,7 +702,9 @@ static void delay_ms_rf(unsigned int ms)
 void key_process(unsigned int pm1,unsigned int pm2,unsigned int pm3,unsigned int pm4,unsigned int pm5)
 {
 		static unsigned int power_cnt = 0;
-		static unsigned char release_flag = 0;	
+	  static unsigned int entrance_cnt = 0;
+		static unsigned char release_flag = 0;
+    dev_HandleTypeDef * fl = (dev_HandleTypeDef *)pm1;	
 		/* check the key */
 		if( HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_1) == 1 )
 		{
@@ -718,6 +720,17 @@ void key_process(unsigned int pm1,unsigned int pm2,unsigned int pm3,unsigned int
 						while(1);
 					}
 			 }
+			 else
+			 {
+				  if( ++entrance_cnt > 5000 )
+					{
+						 /* erase the flash zone */
+					   fl->ioctrl(ERASE_FLASH,FEBASE_ADDR,0,0);
+						 /* and reset system */
+						 HAL_NVIC_SystemReset();
+						 /* end of files */
+				  }
+			 }
 		}
 		else
 		{
@@ -728,7 +741,7 @@ void key_process(unsigned int pm1,unsigned int pm2,unsigned int pm3,unsigned int
 		}
 }
 /* dev init */
-int nrf24L01_Init( dev_HandleTypeDef * dev , void * spi_handle )
+int nrf24L01_Init( dev_HandleTypeDef * dev , void * spi_handle ,unsigned int pm)
 {
 	  /* transfer interface */
 	  if( spi_handle != 0 && rf_spi_handle == 0 )
@@ -745,7 +758,23 @@ int nrf24L01_Init( dev_HandleTypeDef * dev , void * spi_handle )
 		{
 			return (-1);
 		}
-		/*-------------*/
+		/* get and check pm */
+		dev_HandleTypeDef * fs = (dev_HandleTypeDef *)pm;
+		unsigned char unique_d[4];
+		/* read from flash */
+		fs->read(FEBASE_ADDR,unique_d,sizeof(unique_d));
+		/* check it out */
+		if( unique_d[2] == 0xAA && 
+			(unsigned char)(unique_d[0]+unique_d[1]) == unique_d[3] )
+		{
+			/* got correct unique ID */
+			tr_addr_g[0] = unique_d[0];
+			tr_addr_g[1] = unique_d[1];
+			/* set flag */
+			dev->i_flag = 1;
+			dev->i_pri  = unique_d[0] << 8 | unique_d[1]; 
+		}				
+		/* init rf */
 		RF24L01_Init(tr_addr_g);
 		/* ok */
 		return 0;

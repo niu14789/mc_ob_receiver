@@ -29,7 +29,7 @@
 #define DYNAMIC_PACKET      1 		//1:动态数据包, 0:固定
 #define FIXED_PACKET_LEN    32		//包长度
 #define REPEAT_CNT          15		//重复次数
-#define INIT_ADDR           0x34,0x43,0x10,0x10,0x01
+#define INIT_ADDR           0x00,0x00,0xA5,0xA6,0xA7
 
 /** RF24L01硬件IO定义 */
 #define RF24L01_CE_GPIO_PORT			GPIOA

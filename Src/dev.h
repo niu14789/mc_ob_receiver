@@ -29,7 +29,7 @@
 #define SAMPLE_DEEP            (20)
 #define SAMPLE_CHANNEL_COUNT   (5) 
 /* flash eeprom base addr */
-#define EEBASE_ADDR            (0x0800F800)  
+#define FEBASE_ADDR            (0x08003C00)  
 /* for ioctrls */
 #define LOWPOWER    (0)
 #define THRERROR    (1)
@@ -59,6 +59,7 @@
 /* for flash operation */
 #define CALI_BUFFER       (0)
 #define WRITE_CALI        (1)
+#define ERASE_FLASH       (2)
 /*------------*/
 /* USER CODE END Includes */
 #define FOUR_THAN(f,d)   ( (f[0]) > (d) && (f[1]) > (d) && (f[2]) > (d) && (f[3]) > (d) )
@@ -83,6 +84,9 @@ typedef struct
 	void (*state)(unsigned int ds);
 	/* process */
 	void (*process)(unsigned int pm1,unsigned int pm2,unsigned int pm3,unsigned int pm4,unsigned int pm5);
+	/* flag */
+	unsigned int i_flag;
+	unsigned int i_pri;
 }dev_HandleTypeDef;
 /**
   * @brief  device Base Handle Structure definition
@@ -129,7 +133,7 @@ int led_Init(dev_HandleTypeDef * dev);
 int CRC16_Init(dev_HandleTypeDef * dev);
 int common_Init(dev_HandleTypeDef * dev);
 int Flash_Init(dev_HandleTypeDef * dev);
-int nrf24L01_Init( dev_HandleTypeDef * dev , void * spi_handle );
+int nrf24L01_Init( dev_HandleTypeDef * dev , void * spi_handle ,unsigned int pm);
 
 /* end of files */
 #endif
