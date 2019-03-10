@@ -39,21 +39,17 @@ static void rf_delay_ms(unsigned int t)
   //while(tmp--);
 }
 /* spi write */
-void hal_spi_write_byte(unsigned char data)
+unsigned char hal_spi_rw_byte(unsigned char data)
 {
-	unsigned char d = data;
-	/* send */
-	HAL_SPI_Transmit(rf_spi_handle,&d,1,0xffffffff);
+	unsigned char d[2];
+	/* structet */
+	d[0] = data;
+	/* send and receive */
+	HAL_SPI_TransmitReceive(rf_spi_handle,&d[0],&d[1],1,0xffff);
+	/* return data */
+	return d[1];
 }	
-/* spi read */
-unsigned char hal_spi_read_byte(unsigned char data)
-{
-	unsigned char d;
-	/* send */
-	HAL_SPI_Receive(rf_spi_handle,&d,1,0xffffffff);
-	/* return */
-	return d;
-}	
+
 /**
   * @brief :NRF24L01读寄存器
   * @param :
@@ -67,8 +63,8 @@ unsigned char NRF24L01_Read_Reg( unsigned char RegAddr )
 	
     RF24L01_SET_CS_LOW( );			//片选
 	
-    hal_spi_write_byte( NRF_READ_REG | RegAddr );	//读命令 地址
-    btmp = hal_spi_read_byte( 0xFF );				//读数据
+    hal_spi_rw_byte( NRF_READ_REG | RegAddr );	//读命令 地址
+    btmp = hal_spi_rw_byte( 0xFF );				//读数据
 	
     RF24L01_SET_CS_HIGH( );			//取消片选
 	
@@ -90,10 +86,10 @@ void NRF24L01_Read_Buf( unsigned char RegAddr, unsigned char *pBuf, unsigned cha
 	
     RF24L01_SET_CS_LOW( );			//片选
 	
-    hal_spi_write_byte( NRF_READ_REG | RegAddr );	//读命令 地址
+    hal_spi_rw_byte( NRF_READ_REG | RegAddr );	//读命令 地址
     for( btmp = 0; btmp < len; btmp ++ )
     {
-        *( pBuf + btmp ) = hal_spi_read_byte( 0xFF );	//读数据
+        *( pBuf + btmp ) = hal_spi_rw_byte( 0xFF );	//读数据
     }
     RF24L01_SET_CS_HIGH( );		//取消片选
 }
@@ -108,8 +104,8 @@ void NRF24L01_Write_Reg( unsigned char RegAddr, unsigned char Value )
 {
     RF24L01_SET_CS_LOW( );		//片选
 	
-    hal_spi_write_byte( NRF_WRITE_REG | RegAddr );	//写命令 地址
-    hal_spi_write_byte( Value );			//写数据
+    hal_spi_rw_byte( NRF_WRITE_REG | RegAddr );	//写命令 地址
+    hal_spi_rw_byte( Value );			//写数据
 	
     RF24L01_SET_CS_HIGH( );		//取消片选
 }
@@ -129,10 +125,10 @@ void NRF24L01_Write_Buf( unsigned char RegAddr, unsigned char *pBuf, unsigned ch
 	
     RF24L01_SET_CS_LOW( );		//片选
 	
-    hal_spi_write_byte( NRF_WRITE_REG | RegAddr );	//写命令 地址
+    hal_spi_rw_byte( NRF_WRITE_REG | RegAddr );	//写命令 地址
     for( i = 0; i < len; i ++ )
     {
-        hal_spi_write_byte( *( pBuf + i ) );		//写数据
+        hal_spi_rw_byte( *( pBuf + i ) );		//写数据
     }
 	
     RF24L01_SET_CS_HIGH( );		//取消片选
@@ -149,7 +145,7 @@ void NRF24L01_Flush_Tx_Fifo ( void )
 {
     RF24L01_SET_CS_LOW( );		//片选
 	
-    hal_spi_write_byte( FLUSH_TX );	//清TX FIFO命令
+    hal_spi_rw_byte( FLUSH_TX );	//清TX FIFO命令
 	
     RF24L01_SET_CS_HIGH( );		//取消片选
 }
@@ -164,7 +160,7 @@ void NRF24L01_Flush_Rx_Fifo( void )
 {
     RF24L01_SET_CS_LOW( );		//片选
 	
-    hal_spi_write_byte( FLUSH_RX );	//清RX FIFO命令
+    hal_spi_rw_byte( FLUSH_RX );	//清RX FIFO命令
 	
     RF24L01_SET_CS_HIGH( );		//取消片选
 }
@@ -179,7 +175,7 @@ void NRF24L01_Reuse_Tx_Payload( void )
 {
     RF24L01_SET_CS_LOW( );		//片选
 	
-    hal_spi_write_byte( REUSE_TX_PL );		//重新使用上一包命令
+    hal_spi_rw_byte( REUSE_TX_PL );		//重新使用上一包命令
 	
     RF24L01_SET_CS_HIGH( );		//取消片选
 }
@@ -194,7 +190,7 @@ void NRF24L01_Nop( void )
 {
     RF24L01_SET_CS_LOW( );		//片选
 	
-    hal_spi_write_byte( NOP );		//空操作命令
+    hal_spi_rw_byte( NOP );		//空操作命令
 	
     RF24L01_SET_CS_HIGH( );		//取消片选
 }
@@ -211,7 +207,7 @@ unsigned char NRF24L01_Read_Status_Register( void )
 	
     RF24L01_SET_CS_LOW( );		//片选
 	
-    Status = hal_spi_read_byte( NRF_READ_REG + STATUS );	//读状态寄存器
+    Status = hal_spi_rw_byte( NRF_READ_REG + STATUS );	//读状态寄存器
 	
     RF24L01_SET_CS_HIGH( );		//取消片选
 	
@@ -233,8 +229,8 @@ unsigned char NRF24L01_Clear_IRQ_Flag( unsigned char IRQ_Source )
     btmp = NRF24L01_Read_Status_Register( );			//读状态寄存器
 			
     RF24L01_SET_CS_LOW( );			//片选
-    hal_spi_write_byte( NRF_WRITE_REG + STATUS );	//写状态寄存器命令
-    hal_spi_write_byte( IRQ_Source | btmp );		//清相应中断标志
+    hal_spi_rw_byte( NRF_WRITE_REG + STATUS );	//写状态寄存器命令
+    hal_spi_rw_byte( IRQ_Source | btmp );		//清相应中断标志
     RF24L01_SET_CS_HIGH( );			//取消片选
 	
     return ( NRF24L01_Read_Status_Register( ));			//返回状态寄存器状态
@@ -263,8 +259,8 @@ unsigned char NRF24L01_Read_Top_Fifo_Width( void )
 	
     RF24L01_SET_CS_LOW( );		//片选
 	
-    hal_spi_write_byte( R_RX_PL_WID );	//读FIFO中数据宽度命令
-    btmp = hal_spi_read_byte( 0xFF );	//读数据
+    hal_spi_rw_byte( R_RX_PL_WID );	//读FIFO中数据宽度命令
+    btmp = hal_spi_rw_byte( 0xFF );	//读数据
 	
     RF24L01_SET_CS_HIGH( );		//取消片选
 	
@@ -286,11 +282,11 @@ unsigned char NRF24L01_Read_Rx_Payload( unsigned char *pRxBuf )
     Width = NRF24L01_Read_Top_Fifo_Width( );		//读接收数据个数
 
     RF24L01_SET_CS_LOW( );		//片选
-    hal_spi_write_byte( RD_RX_PLOAD );			//读有效数据命令
+    hal_spi_rw_byte( RD_RX_PLOAD );			//读有效数据命令
 	
     for( PipeNum = 0; PipeNum < Width; PipeNum ++ )
     {
-        *( pRxBuf + PipeNum ) = hal_spi_read_byte( 0xFF );		//读数据
+        *( pRxBuf + PipeNum ) = hal_spi_rw_byte( 0xFF );		//读数据
     }
     RF24L01_SET_CS_HIGH( );		//取消片选
     NRF24L01_Flush_Rx_Fifo( );	//清空RX FIFO
@@ -314,11 +310,11 @@ void NRF24L01_Write_Tx_Payload_Ack( unsigned char *pTxBuf, unsigned char len )
     NRF24L01_Flush_Tx_Fifo( );		//清TX FIFO
 	
     RF24L01_SET_CS_LOW( );			//片选
-    hal_spi_write_byte( WR_TX_PLOAD );	//发送命令
+    hal_spi_rw_byte( WR_TX_PLOAD );	//发送命令
 	
     for( btmp = 0; btmp < length; btmp ++ )
     {
-        hal_spi_write_byte( *( pTxBuf + btmp ) );	//发送数据
+        hal_spi_rw_byte( *( pTxBuf + btmp ) );	//发送数据
     }
     RF24L01_SET_CS_HIGH( );			//取消片选
 }
@@ -339,10 +335,10 @@ void NRF24L01_Write_Tx_Payload_NoAck( unsigned char *pTxBuf, unsigned char len )
     }
 	
     RF24L01_SET_CS_LOW( );	//片选
-    hal_spi_write_byte( WR_TX_PLOAD_NACK );	//发送命令
+    hal_spi_rw_byte( WR_TX_PLOAD_NACK );	//发送命令
     while( len-- )
     {
-        hal_spi_write_byte( *pTxBuf );			//发送数据
+        hal_spi_rw_byte( *pTxBuf );			//发送数据
 		pTxBuf++;
     }
     RF24L01_SET_CS_HIGH( );		//取消片选
@@ -363,10 +359,10 @@ void NRF24L01_Write_Tx_Payload_InAck( unsigned char *pData, unsigned char len )
 	len = ( len > 32 ) ? 32 : len;		//数据长度大于32个则只写32个字节
 
     RF24L01_SET_CS_LOW( );			//片选
-    hal_spi_write_byte( W_ACK_PLOAD );		//命令
+    hal_spi_rw_byte( W_ACK_PLOAD );		//命令
     for( btmp = 0; btmp < len; btmp ++ )
     {
-        hal_spi_write_byte( *( pData + btmp ) );	//写数据
+        hal_spi_rw_byte( *( pData + btmp ) );	//写数据
     }
     RF24L01_SET_CS_HIGH( );			//取消片选
 }
@@ -562,7 +558,7 @@ unsigned char NRF24L01_TxPacket( unsigned char *txbuf, unsigned char Length ,uns
 	uint16_t l_MsTimes = 0;
 	
 	RF24L01_SET_CS_LOW( );		//片选
-	hal_spi_write_byte( FLUSH_TX );
+	hal_spi_rw_byte( FLUSH_TX );
 	RF24L01_SET_CS_HIGH( );
 	
 	RF24L01_SET_CE_LOW( );		
@@ -606,7 +602,7 @@ unsigned char NRF24L01_RxPacket( unsigned char *rxbuf ,unsigned char *addr)
 	unsigned char l_Status = 0, l_RxLength = 0;//, l_100MsTimes = 0;
 	
 	RF24L01_SET_CS_LOW( );		//片选
-	hal_spi_write_byte( FLUSH_RX );
+	hal_spi_rw_byte( FLUSH_RX );
 	RF24L01_SET_CS_HIGH( );
 	
 	while( 0 != RF24L01_GET_IRQ_STATUS( ))
