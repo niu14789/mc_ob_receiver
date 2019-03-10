@@ -66,7 +66,7 @@ static void MX_USART1_UART_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 static unsigned char buffer[256];
-
+static unsigned int  led_freq = 0;
 /* tick process */
 void tick_process(void)
 {
@@ -145,8 +145,13 @@ int main(void)
 			if( __crc16.read(0,&__rc,sizeof(__rc) - 2 ) == __rc.crc )
 			{
 				/* ok get data */
-				/* toggle */
-				GPIOB->ODR ^= 1 << 1;				
+				if( ++led_freq >= 50 )
+				{
+					/*clear */
+					led_freq = 0;
+					/* toggle */
+					GPIOB->ODR ^= 1 << 1;			
+				}					
 			}
 		}
     /* USER CODE END WHILE */
