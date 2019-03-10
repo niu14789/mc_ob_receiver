@@ -676,7 +676,7 @@ int nrf_write(unsigned int addr,void * data , unsigned int len)
 	/* set TX mode */
   RF24L01_Set_Mode( MODE_TX );
 	/* send data */
-  NRF24L01_TxPacket( (unsigned char *)&data , len ,tr_addr_g );
+  NRF24L01_TxPacket( (unsigned char *)data , len ,tr_addr_g );
   /* return */
 	return 0;
 }
