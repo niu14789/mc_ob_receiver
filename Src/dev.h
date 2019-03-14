@@ -60,6 +60,8 @@
 #define CALI_BUFFER       (0)
 #define WRITE_CALI        (1)
 #define ERASE_FLASH       (2)
+/* for nrf */
+#define CREATE_DSM        (0)
 /*------------*/
 /* USER CODE END Includes */
 #define FOUR_THAN(f,d)   ( (f[0]) > (d) && (f[1]) > (d) && (f[2]) > (d) && (f[3]) > (d) )

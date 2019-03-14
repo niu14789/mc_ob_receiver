@@ -740,6 +740,70 @@ void key_process(unsigned int pm1,unsigned int pm2,unsigned int pm3,unsigned int
 			release_flag = 1;
 		}
 }
+/* nrf 24l01 ioctrl */
+int nrf_ioctrl(unsigned int cmd,unsigned int param,void * data,unsigned len)
+{
+	int ret = 0;
+	rcs_HandleTypeDef * rcs;
+	unsigned char * p;
+	unsigned short tmp;
+	/* get parse */
+	switch(cmd)
+	{
+		case CREATE_DSM:
+			/* rcs_HandleTypeDef */
+		  rcs = (rcs_HandleTypeDef *)data;
+		  p   = (unsigned char *)param;
+		  /* transfer */
+		  if( len != 16 )
+			{
+				return (-1); // cannot supply this format , dsm 
+			}
+		  tmp = rcs->channel[3] + 12;
+		  tmp = (tmp&0x3ff)|(0x0<<10);  //channel 1 byte 0 
+		  p[14] = tmp>>8;
+		  p[15] = tmp&0xff;
+		 
+		  tmp =  rcs->channel[0] + 12;//yaw
+		  tmp = (tmp&0x3ff)|(0x3<<10);  //channel 4 byte 3 
+		  p[10] = tmp>>8;
+		  p[11] = tmp&0xff;
+		 
+		  tmp =  rcs->channel[2] + 12;//roll
+		  tmp = (tmp&0x3ff)|(0x1<<10);  //channel 2 byte 1 
+		  p[2] = tmp>>8;
+		  p[3] = tmp&0xff;
+		 
+		  tmp =  rcs->channel[1] + 12;//pitch
+		  tmp = (tmp&0x3ff)|(0x2<<10);  //channel 3 byte 2 
+		  p[6] = tmp>>8;
+		  p[7] = tmp&0xff;
+		 
+		  tmp = ((rcs->channel567>>14) == 0x01)?171:(((rcs->channel567>>14)== 0x11)?512:853);
+		  tmp = (tmp&0x3ff)|(0x5<<10);  //channel 6 byte 5 
+		  p[4] = tmp>>8;
+		  p[5] = tmp&0xff;
+			
+		  tmp = (rcs->channel567 & (1<<13))?15:512;
+		  tmp = (tmp&0x3ff)|(0x4<<10);  //channel 6 byte 5 
+		  p[8] = tmp>>8;
+		  p[9] = tmp&0xff;		
+
+		  tmp = (rcs->channel567 & (1<<12))?171:853;
+		  tmp = (tmp&0x3ff)|(0x6<<10);  //channel 6 byte 5 
+		  p[12] = tmp>>8;
+		  p[13] = tmp&0xff;	
+			/* head */
+			p[0] = 0x00;
+			p[1] = 0x02;
+		  /* end if function */
+			break;
+		default:
+			break;
+	}
+	/* return ret */
+	return ret;
+}
 /* dev init */
 int nrf24L01_Init( dev_HandleTypeDef * dev , void * spi_handle ,unsigned int pm)
 {
@@ -753,6 +817,7 @@ int nrf24L01_Init( dev_HandleTypeDef * dev , void * spi_handle ,unsigned int pm)
 		dev->state = delay_ms_rf;
 		dev->read  = nrf_read;
 		dev->process = key_process;
+		dev->ioctrl = nrf_ioctrl;
 		/*---------*/
 		if( NRF24L01_check() != 0 )
 		{
@@ -764,7 +829,7 @@ int nrf24L01_Init( dev_HandleTypeDef * dev , void * spi_handle ,unsigned int pm)
 		/* read from flash */
 		fs->read(FEBASE_ADDR,unique_d,sizeof(unique_d));
 		/* check it out */
-		if( unique_d[2] == 0xAA && 
+		if( unique_d[2] == 0xAA && unique_d[0] != 0 && unique_d[1] != 0 &&
 			(unsigned char)(unique_d[0]+unique_d[1]) == unique_d[3] )
 		{
 			/* got correct unique ID */
