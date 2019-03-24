@@ -225,7 +225,7 @@ int NRF24L01_check( void );
 unsigned char NRF24L01_TxPacket( unsigned char *txbuf, unsigned char Length ,unsigned char * addr);
 unsigned char NRF24L01_RxPacket( unsigned char *rxbuf ,unsigned char * addr);
 void NRF24L01_Gpio_Init( void );
-void RF24L01_Init(unsigned char * addr );	
+void RF24L01_Init(unsigned char * addr ,unsigned char rf_ch);
 void delay_ms(unsigned int t);
 
 #endif

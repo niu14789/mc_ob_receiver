@@ -31,6 +31,7 @@
 
 SPI_HandleTypeDef * rf_spi_handle;
 static unsigned char  tr_addr_g[5] = {INIT_ADDR};
+static unsigned char rf_ch_g = 60;
 /* delay */
 static void rf_delay_ms(unsigned int t)
 {
@@ -569,7 +570,7 @@ unsigned char NRF24L01_TxPacket( unsigned char *txbuf, unsigned char Length ,uns
 		rf_delay_ms( 1 );
 		if( 500 == l_MsTimes++ )						//500ms还没有发送成功，重新初始化设备
 		{
-      RF24L01_Init(addr);
+      RF24L01_Init(addr,rf_ch_g);
 			RF24L01_Set_Mode( MODE_TX );
 			break;
 		}
@@ -636,7 +637,7 @@ unsigned char NRF24L01_RxPacket( unsigned char *rxbuf ,unsigned char *addr)
   * @note  :无
   * @retval:无
   */
-void RF24L01_Init(unsigned char * addr )
+void RF24L01_Init(unsigned char * addr ,unsigned char rf_ch)
 {
     /* addr */
     RF24L01_SET_CE_HIGH( );
@@ -662,7 +663,7 @@ void RF24L01_Init(unsigned char * addr )
     NRF24L01_Write_Reg( SETUP_AW, AW_5BYTES );     			//μ??·?í?è 5??×??ú
     NRF24L01_Write_Reg( SETUP_RETR, ARD_4000US |
                         ( REPEAT_CNT & 0x0F ) );         	//???′μè′yê±?? 250us
-    NRF24L01_Write_Reg( RF_CH, 60 );             			//3?ê??ˉí¨μà
+    NRF24L01_Write_Reg( RF_CH, rf_ch );             			//3?ê??ˉí¨μà
     NRF24L01_Write_Reg( RF_SETUP, 0x26 );
 
     NRF24L01_Set_TxAddr( addr, 5 );                      //éè??TXμ??·
@@ -838,9 +839,11 @@ int nrf24L01_Init( dev_HandleTypeDef * dev , void * spi_handle ,unsigned int pm)
 			/* set flag */
 			dev->i_flag = 1;
 			dev->i_pri  = unique_d[0] << 8 | unique_d[1]; 
+			/* set channel */
+			rf_ch_g = ( unique_d[0] + unique_d[1] ) & 0x7f;
 		}				
 		/* init rf */
-		RF24L01_Init(tr_addr_g);
+		RF24L01_Init(tr_addr_g,rf_ch_g);
 		/* ok */
 		return 0;
 }
