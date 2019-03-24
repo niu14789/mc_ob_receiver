@@ -67,7 +67,8 @@ static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN 0 */
 static unsigned char buffer[256];
 static unsigned int  led_freq = 0;
-static unsigned int  connect_lost = 0;
+static unsigned int  connect_lost_counter = 0;
+static unsigned int  connect_lost_flag = 0;
 static unsigned char dsm2_send[16]	={ 0x00 ,0x02 ,0x06 ,0x00 ,0x16 ,0x00 ,0x09 ,0xFF ,0x12 ,0x00 ,0x0E ,0x19 ,0x1B ,0x55 ,0x00 ,0x0F};
 static unsigned int  rc_freq = 0;
 /* tick process */
@@ -79,16 +80,24 @@ void tick_process(void)
 	   __nrf.process((unsigned int)&__flash,0,0,0,0);
 	}
 	/* counter */
-	if( connect_lost ++ > 1000 )
+	if( connect_lost_counter ++ > 1000 )
 	{
 		/* If no data is received in a second, 
 		   it is considered disconnected */
-		connect_lost = 0;
 		/* set led on */
 		HAL_GPIO_WritePin(GPIOB,GPIO_PIN_1,GPIO_PIN_RESET);
+		/* clear the channel data */
+		connect_lost_flag = 1;
+		/*------------------------*/
+	}
+	else
+	{
+		/* clear the channel data */
+		connect_lost_flag = 0;
+		/*------------------------*/		
 	}
 	/* send data per 20 ms */
-	if( rc_freq++ >= 20 )
+	if( rc_freq++ >= 20 && connect_lost_flag == 0 )
 	{
 		 /* clear and send data */
 		 rc_freq = 0;
@@ -160,7 +169,7 @@ int main(void)
 		if( __nrf.read(0,buffer,sizeof(buffer)) == sizeof(__rc))
 		{
 			/* clear the counter */
-			connect_lost = 0;
+			connect_lost_counter = 0;
 			/* copy data */
 			memcpy((void *)&__rc,(const void *)buffer,sizeof(__rc));
 			/* check crc */
