@@ -71,6 +71,7 @@ static unsigned int  connect_lost_counter = 0;
 static unsigned int  connect_lost_flag = 0;
 static unsigned char dsm2_send[16]	={ 0x00 ,0x02 ,0x06 ,0x00 ,0x16 ,0x00 ,0x09 ,0xFF ,0x12 ,0x00 ,0x0E ,0x19 ,0x1B ,0x55 ,0x00 ,0x0F};
 static unsigned int  rc_freq = 0;
+static unsigned char fw_once_flag = 0;
 /* tick process */
 void tick_process(void)
 {
@@ -196,10 +197,14 @@ int main(void)
 					/* check sum */
 					buffert[3] = (unsigned char)(buffert[0] + buffert[1]);
 					/* active */
-					if( __flash.write(FEBASE_ADDR,buffert,sizeof(buffert)) == 0 )
+					if( __flash.write(FEBASE_ADDR,buffert,sizeof(buffert)) == 0 && fw_once_flag == 0)
 					{
+						/* flash is just allowed to wrtite once */
+						fw_once_flag = 1;
 						/* ok . config ok . reset the system */
 						HAL_GPIO_WritePin(GPIOF,GPIO_PIN_0,GPIO_PIN_RESET);
+						/* check */
+						__nrf.state(2000);						
 					}
 				}
 				/* create dsm buffer */
