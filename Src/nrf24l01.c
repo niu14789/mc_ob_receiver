@@ -765,6 +765,8 @@ int nrf_ioctrl(unsigned int cmd,unsigned int param,void * data,unsigned len)
 	rcs_HandleTypeDef * rcs;
 	unsigned char * p;
 	unsigned short tmp;
+	/* channel 6 */
+	unsigned char trcs;
 	/* get parse */
 	switch(cmd)
 	{
@@ -796,18 +798,19 @@ int nrf_ioctrl(unsigned int cmd,unsigned int param,void * data,unsigned len)
 		  tmp = (tmp&0x3ff)|(0x2<<10);  //channel 3 byte 2 
 		  p[6] = tmp>>8;
 		  p[7] = tmp&0xff;
-		 
-		  tmp = ((rcs->channel567>>14) == 0x01)?171:(((rcs->channel567>>14)== 0x11)?512:853);
+			/* transfer */
+			trcs = rcs->channel567 >> 14;	
+		  tmp = ( trcs == 0x01)?171:((trcs==0x3)?512:853);
 		  tmp = (tmp&0x3ff)|(0x5<<10);  //channel 6 byte 5 
 		  p[4] = tmp>>8;
 		  p[5] = tmp&0xff;
 			
-		  tmp = (rcs->channel567 & (1<<13))?15:512;
+		  tmp = (rcs->channel567 & (1<<13))?171:853;
 		  tmp = (tmp&0x3ff)|(0x4<<10);  //channel 6 byte 5 
 		  p[8] = tmp>>8;
 		  p[9] = tmp&0xff;		
 
-		  tmp = (rcs->channel567 & (1<<12))?171:853;
+		  tmp = (rcs->channel567 & (1<<12))?853:171;
 		  tmp = (tmp&0x3ff)|(0x6<<10);  //channel 6 byte 5 
 		  p[12] = tmp>>8;
 		  p[13] = tmp&0xff;	
