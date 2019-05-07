@@ -23,6 +23,10 @@
 #define __NOTIFY_H__
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+#define RECEIVER_BOARD   1   // Independent Receiver Board Enable or not
+/* USER CODE END PM */
 /* USER CODE BEGIN Includes */
 #define SILIENCE_DEBUG         (0)
 /* ADC settings */

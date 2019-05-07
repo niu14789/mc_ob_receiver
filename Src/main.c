@@ -106,6 +106,22 @@ void tick_process(void)
 	}
 	/* end of file */	
 }
+#if RECEIVER_BOARD
+/* set PF1 to GPIO_PULLUP */
+static void MX_PF1_Init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOF_CLK_ENABLE();
+
+  /*Configure GPIO pin : PF1 */
+  GPIO_InitStruct.Pin = GPIO_PIN_1;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+}
+#endif
 /* USER CODE END 0 */
 
 /**
@@ -139,6 +155,10 @@ int main(void)
   MX_SPI1_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+#if RECEIVER_BOARD
+/* set PF1 to GPIO_PULLUP */
+  MX_PF1_Init();
+#endif
 	CRC16_Init(&__crc16);
 	Flash_Init(&__flash);
   /* check nrf24l01 */	
@@ -151,7 +171,10 @@ int main(void)
 		{
 			__nrf.state(2000);
 			/* toggle */
-			GPIOB->ODR ^= 1 << 1;
+			GPIOB->ODR ^= 1 << 1; // led green
+#if RECEIVER_BOARD			
+			GPIOF->ODR ^= 1 << 0; // led red
+#endif
 		}
 	}  
 	/* check */
@@ -201,10 +224,15 @@ int main(void)
 					{
 						/* flash is just allowed to wrtite once */
 						fw_once_flag = 1;
+#if RECEIVER_BOARD
+					  /* and reset system */
+					  HAL_NVIC_SystemReset();						
+#else						
 						/* ok . config ok . reset the system */
 						HAL_GPIO_WritePin(GPIOF,GPIO_PIN_0,GPIO_PIN_RESET);
 						/* check */
-						__nrf.state(2000);						
+						__nrf.state(2000);			
+#endif						
 					}
 				}
 				/* create dsm buffer */

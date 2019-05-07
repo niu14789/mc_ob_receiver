@@ -707,7 +707,11 @@ void key_process(unsigned int pm1,unsigned int pm2,unsigned int pm3,unsigned int
 		static unsigned char release_flag = 0;
     dev_HandleTypeDef * fl = (dev_HandleTypeDef *)pm1;	
 		/* check the key */
+#if RECEIVER_BOARD	
+		if( HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_1) == 0 )
+#else
 		if( HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_1) == 1 )
+#endif		
 		{
 			 if( release_flag )
 			 {
@@ -715,10 +719,12 @@ void key_process(unsigned int pm1,unsigned int pm2,unsigned int pm3,unsigned int
 					/* power off */
 					if( power_cnt > 1000 )
 					{
+#if !RECEIVER_BOARD
 						HAL_GPIO_WritePin(GPIOF,GPIO_PIN_0,GPIO_PIN_RESET);	
 						HAL_GPIO_WritePin(GPIOB,GPIO_PIN_1,GPIO_PIN_SET);
 						/* infinite loop */
 						while(1);
+#endif
 					}
 			 }
 			 else
@@ -727,8 +733,19 @@ void key_process(unsigned int pm1,unsigned int pm2,unsigned int pm3,unsigned int
 					{
 						 /* erase the flash zone */
 					   fl->ioctrl(ERASE_FLASH,FEBASE_ADDR,0,0);
+						 /* close the led and waiting reset */
+#if RECEIVER_BOARD
+						 /* close LEDs */
+						 GPIOB->ODR |= 1 << 1;		
+						 GPIOF->ODR |= 1 << 0;			
+             /* waitting for release the key */
+             while(!(HAL_GPIO_ReadPin(GPIOF,GPIO_PIN_1) == 1));		
+						 /* and reset system */
+						 HAL_NVIC_SystemReset();						
+#else
 						 /* and reset system */
 						 HAL_NVIC_SystemReset();
+#endif
 						 /* end of files */
 				  }
 			 }
