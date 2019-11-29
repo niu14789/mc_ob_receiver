@@ -1,7 +1,7 @@
 [PreviousGenFiles]
-HeaderPath=C:/niu/mc_ob_receiver/Inc
+HeaderPath=C:/Users/Administrator/Desktop/mc_ob_receiver/Inc
 HeaderFiles=stm32f0xx_it.h;stm32f0xx_hal_conf.h;main.h;
-SourcePath=C:/niu/mc_ob_receiver/Src
+SourcePath=C:/Users/Administrator/Desktop/mc_ob_receiver/Src
 SourceFiles=stm32f0xx_it.c;stm32f0xx_hal_msp.c;main.c;
 
 [PreviousLibFiles]
